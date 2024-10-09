@@ -1,20 +1,43 @@
 package com.gtasterix.AbhinavNGO.mapper;
 
 import com.gtasterix.AbhinavNGO.DTO.ApplicationDTO;
-import com.gtasterix.AbhinavNGO.DTO.UserDTO;
+import com.gtasterix.AbhinavNGO.DTO.QualificationDTO;
 import com.gtasterix.AbhinavNGO.model.Application;
-import com.gtasterix.AbhinavNGO.model.User;
+import com.gtasterix.AbhinavNGO.model.Qualification;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class ApplicationMapper {
+    public static Application toApplicationEntity(ApplicationDTO applicationDTO) {
+        Application application = new Application();
+        application.setFirstName(applicationDTO.getFirstName());
+        application.setLastName(applicationDTO.getLastName());
+        application.setMailID(applicationDTO.getMailID());
+        application.setMobileNo(applicationDTO.getMobileNo());
+        application.setAlternateNo(applicationDTO.getAlternateNo());
+        application.setFatherName(applicationDTO.getFatherName());
+        application.setMotherName(applicationDTO.getMotherName());
+        application.setDob(applicationDTO.getDob());
+        application.setAddress(applicationDTO.getAddress());
+        application.setState(applicationDTO.getState());
+        application.setPinCode(applicationDTO.getPinCode());
+        application.setCategory(applicationDTO.getCategory());
+        application.setMaritalStatus(applicationDTO.getMaritalStatus());
+        application.setReligion(applicationDTO.getReligion());
+        application.setCitizenOfIndia(applicationDTO.getCitizenOfIndia());
+        application.setAnyDisability(applicationDTO.getAnyDisability());
+        application.setQualifications(new ArrayList<>()); // Initialize the qualifications collection
+        return application;
+    }
 
-    public static ApplicationDTO toApplicationDTO(Application application){
+    public static ApplicationDTO toApplicationDTO(Application application) {
         ApplicationDTO applicationDTO = new ApplicationDTO();
-
-
+        applicationDTO.setId(application.getApplicationId());
         applicationDTO.setFirstName(application.getFirstName());
         applicationDTO.setLastName(application.getLastName());
         applicationDTO.setMailID(application.getMailID());
-       // applicationDTO.setEducation(application.getEducation());
         applicationDTO.setMobileNo(application.getMobileNo());
         applicationDTO.setAlternateNo(application.getAlternateNo());
         applicationDTO.setFatherName(application.getFatherName());
@@ -29,32 +52,17 @@ public class ApplicationMapper {
         applicationDTO.setCitizenOfIndia(application.getCitizenOfIndia());
         applicationDTO.setAnyDisability(application.getAnyDisability());
 
+        // Map the qualifications
+        List<Qualification> qualifications = application.getQualifications();
+        if (qualifications != null) {
+            List<QualificationDTO> qualificationDTOs = new ArrayList<>();
+            for (Qualification qualification : qualifications) {
+                QualificationDTO qualificationDTO = QualificationMapper.toQualificationDTO(qualification);
+                qualificationDTOs.add(qualificationDTO);
+            }
+            applicationDTO.setQualifications(qualificationDTOs);
+        }
 
         return applicationDTO;
-    }
-
-    public static Application toApplicationEntity(ApplicationDTO applicationDTO) {
-        Application applicationEntity = new Application();
-
-
-        applicationEntity.setFirstName(applicationDTO.getFirstName());
-        applicationEntity.setLastName(applicationDTO.getLastName());
-        applicationEntity.setMailID(applicationDTO.getMailID());
-       // applicationEntity.setEducation(applicationDTO.getEducation());
-        applicationEntity.setMobileNo(applicationDTO.getMobileNo());
-        applicationEntity.setAlternateNo(applicationDTO.getAlternateNo());
-        applicationEntity.setFatherName(applicationDTO.getFatherName());
-        applicationEntity.setMotherName(applicationDTO.getMotherName());
-        applicationEntity.setDob(applicationDTO.getDob());
-        applicationEntity.setAddress(applicationDTO.getAddress());
-        applicationEntity.setState(applicationDTO.getState());
-        applicationEntity.setPinCode(applicationDTO.getPinCode());
-        applicationEntity.setCategory(applicationDTO.getCategory());
-        applicationEntity.setMaritalStatus(applicationDTO.getMaritalStatus());
-        applicationEntity.setReligion(applicationDTO.getReligion());
-        applicationEntity.setCitizenOfIndia(applicationDTO.getCitizenOfIndia());
-        applicationEntity.setAnyDisability(applicationDTO.getAnyDisability());
-
-        return applicationEntity;
     }
 }

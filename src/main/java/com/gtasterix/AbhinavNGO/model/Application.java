@@ -12,8 +12,7 @@ public class Application {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
+    private Integer applicationId;
 
     @Column(nullable = false)
     private String firstName;
@@ -38,19 +37,19 @@ public class Application {
     @Column(nullable = false)
     private String motherName;
 
-    @Column(nullable = false)
+   @Column(nullable = false)
     private String dob;
 
-    @Column(nullable = false)
+   @Column(nullable = false)
     private String address;
 
     @Column(nullable = false)
     private String state;
 
-    @Column(nullable = false)
+   @Column(nullable = false)
     private String pinCode;
 
-    @Column(nullable = false)
+   @Column(nullable = false)
     private String category;
 
     @Column(nullable = false)
@@ -65,7 +64,7 @@ public class Application {
     @Column(nullable = false)
     private String anyDisability;
 
-    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true ,fetch = FetchType.EAGER)
     private List<Qualification> qualifications = new ArrayList<>();
 
 }

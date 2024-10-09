@@ -2,8 +2,11 @@ package com.gtasterix.AbhinavNGO.Service;
 
 
 import com.gtasterix.AbhinavNGO.DTO.ApplicationDTO;
+import com.gtasterix.AbhinavNGO.DTO.QualificationDTO;
 import com.gtasterix.AbhinavNGO.mapper.ApplicationMapper;
+import com.gtasterix.AbhinavNGO.mapper.QualificationMapper;
 import com.gtasterix.AbhinavNGO.model.Application;
+import com.gtasterix.AbhinavNGO.model.Qualification;
 import com.gtasterix.AbhinavNGO.repository.ApplicationRepository;
 import org.modelmapper.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,14 +52,27 @@ public class ApplicationService {
         return true;
     }
 
+    // ApplicationService.java
     public ApplicationDTO addApplication(ApplicationDTO applicationDTO) throws Exception {
         if (validateMobileNumber(applicationDTO.getMobileNo()) && validateEmail(applicationDTO.getMailID())) {
             Application application = ApplicationMapper.toApplicationEntity(applicationDTO);
             Application savedApplication = applicationRepository.save(application);
+
+            // Map the qualifications
+            List<QualificationDTO> qualificationDTOs = applicationDTO.getQualifications();
+            if (qualificationDTOs != null) {
+                for (QualificationDTO qualificationDTO : qualificationDTOs) {
+                    Qualification qualification = QualificationMapper.toQualification(qualificationDTO);
+                    qualification.setApplication(savedApplication);
+                    savedApplication.getQualifications().add(qualification);
+                }
+                applicationRepository.save(savedApplication);
+            }
+
             ApplicationDTO savedApplicationDTO = ApplicationMapper.toApplicationDTO(savedApplication);
             return savedApplicationDTO;
         } else {
-            throw new Exception("User not created due to invalid details");
+            throw new Exception("User   not created due to invalid details");
         }
     }
 
@@ -211,15 +227,15 @@ public class ApplicationService {
         if ((applicationDTO.getMailID() == null) || applicationDTO.getMailID().isEmpty()) {
             throw new Exception("Mail ID is required");
         }
-        if ((applicationDTO.getEducation() == null) || applicationDTO.getEducation().isEmpty()) {
-            throw new Exception("Education is required");
-        }
+//        if ((applicationDTO.getEducation() == null) || applicationDTO.getEducation().isEmpty()) {
+//            throw new Exception("Education is required");
+//        }
         if ((applicationDTO.getMobileNo() == null) || applicationDTO.getMobileNo().isEmpty()) {
             throw new Exception("Mobile Number is required");
         }
-        if ((applicationDTO.getAlternateNo() == null) || applicationDTO.getAlternateNo().isEmpty()) {
-            throw new Exception("Alternate Mobile Number is required");
-        }
+//        if ((applicationDTO.getAlternateNo() == null) || applicationDTO.getAlternateNo().isEmpty()) {
+//            throw new Exception("Alternate Mobile Number is required");
+//        }
         if ((applicationDTO.getFatherName() == null) || applicationDTO.getFatherName().isEmpty()) {
             throw new Exception("Father's Name is required");
         }

@@ -1,11 +1,11 @@
 package com.gtasterix.AbhinavNGO.Service;
 
 import com.gtasterix.AbhinavNGO.DTO.QualificationDTO;
+import com.gtasterix.AbhinavNGO.mapper.QualificationMapper;
 import com.gtasterix.AbhinavNGO.model.Application;
 import com.gtasterix.AbhinavNGO.model.Qualification;
 import com.gtasterix.AbhinavNGO.repository.ApplicationRepository;
 import com.gtasterix.AbhinavNGO.repository.QualificationRepository;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-
+// QualificationService.java
 public class QualificationService {
 
     @Autowired
@@ -22,39 +22,25 @@ public class QualificationService {
     @Autowired
     private ApplicationRepository applicationRepository;
 
-   private ModelMapper modelMapper;
-
     public QualificationDTO addQualification(QualificationDTO qualificationDTO) throws Exception {
 
         Application application = applicationRepository.findById(qualificationDTO.getApplicationId())
                 .orElseThrow(() -> new Exception("Application not found"));
 
-        Qualification qualification = modelMapper.map(qualificationDTO,Qualification.class);
+        Qualification qualification = QualificationMapper.toQualification(qualificationDTO);
         qualification.setApplication(application); // Set the existing application
         qualificationRepository.save(qualification);
-      //  return QualificationMapper.toQualificationDTO(qualification);
-        return modelMapper.map(qualification,QualificationDTO.class);
+        return QualificationMapper.toQualificationDTO(qualification);
     }
-
-//    public QualificationDTO addQualification(QualificationDTO qualificationDTO) throws Exception{
-//        if (qualificationDTO.getApplicationId() == null) {
-//            throw new Exception("Application ID is required");
-//        }
-//        Qualification qualification = QualificationMapper.toQualification(qualificationDTO);
-//         qualificationRepository.save(qualification);
-//       return QualificationMapper.toQualificationDTO(qualification);
-//    }
 
     public List<QualificationDTO> getAll() {
         List<Qualification> qualificationList = qualificationRepository.findAll();
         List<QualificationDTO> qualificationDTOList = new ArrayList<>();
 
         for (Qualification qualification : qualificationList){
-            qualificationDTOList.add(modelMapper.map(qualification,QualificationDTO.class));
-            //qualificationDTOList.add(QualificationMapper.toQualificationDTO(qualification));
+            qualificationDTOList.add(QualificationMapper.toQualificationDTO(qualification));
         }
         return qualificationDTOList;
-
     }
 
     public QualificationDTO updateQualificationById(Integer id, QualificationDTO updatedQualificationDTO) throws Exception {
@@ -75,8 +61,7 @@ public class QualificationService {
 
         qualificationRepository.save(existingQualification);
 
-        return modelMapper.map(existingQualification,QualificationDTO.class);
-        // return QualificationMapper.toQualificationDTO(existingQualification);
+        return QualificationMapper.toQualificationDTO(existingQualification);
     }
 
     public QualificationDTO patchQualificationById(Integer id, QualificationDTO patchBody) throws Exception {
@@ -103,8 +88,7 @@ public class QualificationService {
 
         qualificationRepository.save(existingQualification);
 
-        return modelMapper.map(existingQualification,QualificationDTO.class);
-       // return QualificationMapper.toQualificationDTO(existingQualification);
+        return QualificationMapper.toQualificationDTO(existingQualification);
     }
 
     public QualificationDTO deleteQualificationById(Integer id) throws Exception {
@@ -113,8 +97,7 @@ public class QualificationService {
 
         qualificationRepository.deleteById(id);
 
-        return modelMapper.map(existingQualification,QualificationDTO.class);
-       // return QualificationMapper.toQualificationDTO(existingQualification);
+        return QualificationMapper.toQualificationDTO(existingQualification);
     }
 
     private void ValidateQualificationDTO(QualificationDTO qualificationDTO) throws Exception {
@@ -134,6 +117,4 @@ public class QualificationService {
             throw new Exception("Percentage must be between 0 and 100");
         }
     }
-
-
 }

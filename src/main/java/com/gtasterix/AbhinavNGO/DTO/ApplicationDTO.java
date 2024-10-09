@@ -12,7 +12,7 @@ public class ApplicationDTO {
     private String firstName;
     private String lastName;
     private String mailID;
-    private String education;
+//    private String education;
     private String mobileNo ;
     private String alternateNo;
     private String fatherName;

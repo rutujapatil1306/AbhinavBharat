@@ -10,15 +10,15 @@ public class Qualification
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer QualificationId;
 
     private String standard;
     private String university;
     private String passingYear;
     private Double percentage;
 
-    @ManyToOne
-    @JoinColumn(name = "application_id", nullable = false)
+    @ManyToOne (fetch = FetchType.LAZY)
+    @JoinColumn(name = "applicationId", nullable = false)
     private Application application;
 
 }
