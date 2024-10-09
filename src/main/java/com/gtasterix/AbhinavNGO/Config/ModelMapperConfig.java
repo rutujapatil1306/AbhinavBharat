@@ -1,14 +1,14 @@
 package com.gtasterix.AbhinavNGO.Config;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ModelMapperConfig {
+public class ModelMapper {
 
-    @Bean
-    public ModelMapperConfig modelMapper(){
-        return new ModelMapperConfig();
-    }
+   @Bean
+    public ModelMapper modelMapper(){
+       return new ModelMapper();
+   }
+
 }
