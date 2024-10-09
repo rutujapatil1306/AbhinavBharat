@@ -3,6 +3,9 @@ package com.gtasterix.AbhinavNGO.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 public class Application {
@@ -10,6 +13,7 @@ public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
 
     @Column(nullable = false)
     private String firstName;
@@ -20,8 +24,8 @@ public class Application {
     @Column(nullable = false,unique = true)
     private String mailID;
 
-    @Column(nullable = false)
-    private String education;
+//    @Column(nullable = false)
+//    private String education;
 
     @Column(nullable = false)
     private String mobileNo ;
@@ -60,5 +64,8 @@ public class Application {
 
     @Column(nullable = false)
     private String anyDisability;
+
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Qualification> qualifications = new ArrayList<>();
 
 }

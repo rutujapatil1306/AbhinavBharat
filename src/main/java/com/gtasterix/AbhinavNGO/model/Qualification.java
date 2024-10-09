@@ -1,9 +1,6 @@
 package com.gtasterix.AbhinavNGO.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
@@ -20,5 +17,10 @@ public class Qualification
     private String passingYear;
     private Double percentage;
 
+    @ManyToOne
+    @JoinColumn(name = "application_id", nullable = false)
+    private Application application;
 
 }
+
+

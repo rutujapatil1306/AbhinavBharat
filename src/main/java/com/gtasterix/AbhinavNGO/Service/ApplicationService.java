@@ -89,39 +89,6 @@ public class ApplicationService {
         }
     }
 
-//    public ApplicationDTO updateById(Integer id, ApplicationDTO updatedApplicationDTO) throws Exception {
-//        // Fetch the application by id, if not found, throw exception
-//        Application existingApplication = applicationRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Application with ID " + id + " not found"));
-//
-//        // Validate the updatedApplicationDTO before updating the existing application
-//        ValidateApplicationDTO(updatedApplicationDTO);
-//
-//        // Update the fields of the existing application with the new values
-//        existingApplication.setFirstName(updatedApplicationDTO.getFirstName());
-//        existingApplication.setLastName(updatedApplicationDTO.getLastName());
-//        existingApplication.setMailID(updatedApplicationDTO.getMailID());
-//        existingApplication.setEducation(updatedApplicationDTO.getEducation());
-//        existingApplication.setMobileNo(updatedApplicationDTO.getMobileNo());
-//        existingApplication.setAlternateNo(updatedApplicationDTO.getAlternateNo());
-//        existingApplication.setFatherName(updatedApplicationDTO.getFatherName());
-//        existingApplication.setMotherName(updatedApplicationDTO.getMotherName());
-//        existingApplication.setDob(updatedApplicationDTO.getDob());
-//        existingApplication.setAddress(updatedApplicationDTO.getAddress());
-//        existingApplication.setState(updatedApplicationDTO.getState());
-//        existingApplication.setPinCode(updatedApplicationDTO.getPinCode());
-//        existingApplication.setCategory(updatedApplicationDTO.getCategory());
-//        existingApplication.setMaritalStatus(updatedApplicationDTO.getMaritalStatus());
-//        existingApplication.setReligion(updatedApplicationDTO.getReligion());
-//        existingApplication.setCitizenOfIndia(updatedApplicationDTO.getCitizenOfIndia());
-//        existingApplication.setAnyDisability(updatedApplicationDTO.getAnyDisability());
-//
-//        // Save the updated application back to the database
-//        Application updatedApplication = applicationRepository.save(existingApplication);
-//
-//        // Return the updatedApplicationDTO using the mapper
-//        return ApplicationMapper.toApplicationDTO(updatedApplication);
-//    }
 
     public ApplicationDTO updateById(Integer id, ApplicationDTO updatedApplicationDTO) throws Exception {
         Application existingApplication = applicationRepository.findById(id)
@@ -134,7 +101,7 @@ public class ApplicationService {
             existingApplication.setFirstName(updatedApplicationDTO.getFirstName());
             existingApplication.setLastName(updatedApplicationDTO.getLastName());
             existingApplication.setMailID(updatedApplicationDTO.getMailID());
-            existingApplication.setEducation(updatedApplicationDTO.getEducation());
+            //existingApplication.setEducation(updatedApplicationDTO.getEducation());
             existingApplication.setMobileNo(updatedApplicationDTO.getMobileNo());
             existingApplication.setAlternateNo(updatedApplicationDTO.getAlternateNo());
             existingApplication.setFatherName(updatedApplicationDTO.getFatherName());
@@ -173,9 +140,9 @@ public class ApplicationService {
                 validateEmail(patchBody.getMailID());
                 existingApplication.setMailID(patchBody.getMailID());
             }
-            if (patchBody.getEducation() != null) {
-                existingApplication.setEducation(patchBody.getEducation());
-            }
+//            if (patchBody.getEducation() != null) {
+//                existingApplication.setEducation(patchBody.getEducation());
+//            }
             if (patchBody.getMobileNo() != null) {
                 validateMobileNumber(patchBody.getMobileNo());
                 existingApplication.setMobileNo(patchBody.getMobileNo());

@@ -2,10 +2,13 @@ package com.gtasterix.AbhinavNGO.DTO;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ApplicationDTO {
 
-    private int id;
+    private Integer id;
+    private Integer application_id;
     private String firstName;
     private String lastName;
     private String mailID;
@@ -23,4 +26,6 @@ public class ApplicationDTO {
     private String religion;
     private String citizenOfIndia;
     private String anyDisability;
+
+    private List<QualificationDTO> qualifications;
 }
