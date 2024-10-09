@@ -43,37 +43,42 @@ public class QualificationController {
         }
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateQualification(@PathVariable Integer id, @RequestBody QualificationDTO qualificationDTO) {
+    @PutMapping("/updateById")
+    public ResponseEntity<?> updateQualification(@RequestParam Integer id, @RequestBody QualificationDTO qualificationDTO) {
         try {
             validateQualification(qualificationDTO);
             QualificationDTO updatedQualification = qualificationService.updateQualificationById(id, qualificationDTO);
+            Response response = new Response("Qualification Updated Sucessfully",updatedQualification,false);
             return ResponseEntity.ok(updatedQualification);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            Response errorResponse = new Response("Failed to Updated Qualification Sucessfully",e.getMessage(),true);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
 
     // Patch a qualification by ID
-    @PatchMapping("/patch/{id}")
-    public ResponseEntity<?> patchQualification(@PathVariable Integer id, @RequestBody QualificationDTO patchBody) {
+    @PatchMapping("/patchById")
+    public ResponseEntity<?> patchQualification(@RequestParam Integer id, @RequestBody QualificationDTO patchBody) {
         try {
             validateQualification(patchBody);
             QualificationDTO patchedQualification = qualificationService.patchQualificationById(id, patchBody);
+            Response response = new Response("Qualification Patched Sucessfully",patchedQualification,false);
             return ResponseEntity.ok(patchedQualification);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+            Response errorResponse = new Response("Failed to Patched Qualification ",e.getMessage(),true);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);        }
     }
 
     // Delete a qualification by ID
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteQualification(@PathVariable Integer id) {
+    @DeleteMapping("/deleteById")
+    public ResponseEntity<?> deleteQualification(@RequestParam Integer id) {
         try {
             QualificationDTO deletedQualification = qualificationService.deleteQualificationById(id);
+            Response response = new Response("Qualification Deleted Sucessfully",deletedQualification,false);
             return ResponseEntity.ok(deletedQualification);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            Response errorResponse = new Response("Failed to Delete Qualification ",e.getMessage(),true);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
 

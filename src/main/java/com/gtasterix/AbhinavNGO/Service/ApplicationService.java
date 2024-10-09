@@ -8,7 +8,6 @@ import com.gtasterix.AbhinavNGO.mapper.QualificationMapper;
 import com.gtasterix.AbhinavNGO.model.Application;
 import com.gtasterix.AbhinavNGO.model.Qualification;
 import com.gtasterix.AbhinavNGO.repository.ApplicationRepository;
-import org.modelmapper.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +37,7 @@ public class ApplicationService {
     }
 
     private static boolean validateMobileNumber1(String second_MobileNo) {
-        if (second_MobileNo == null || !Pattern.matches(MOBILE_REGEX, second_MobileNo)) {
+        if ( !Pattern.matches(MOBILE_REGEX, second_MobileNo)) {
             throw new IllegalArgumentException("Invalid mobile number format");
         }
         return true;
@@ -52,9 +51,13 @@ public class ApplicationService {
         return true;
     }
 
-    // ApplicationService.java
     public ApplicationDTO addApplication(ApplicationDTO applicationDTO) throws Exception {
-        if (validateMobileNumber(applicationDTO.getMobileNo()) && validateEmail(applicationDTO.getMailID())) {
+        if (validateMobileNumber(applicationDTO.getMobileNo())
+                && validateEmail(applicationDTO.getMailID())) {
+            if (applicationDTO.getAlternateNo() != null) {
+                validateMobileNumber1(applicationDTO.getAlternateNo());
+            }
+
             Application application = ApplicationMapper.toApplicationEntity(applicationDTO);
             Application savedApplication = applicationRepository.save(application);
 
@@ -72,9 +75,40 @@ public class ApplicationService {
             ApplicationDTO savedApplicationDTO = ApplicationMapper.toApplicationDTO(savedApplication);
             return savedApplicationDTO;
         } else {
-            throw new Exception("User   not created due to invalid details");
+            throw new Exception("User  not created due to invalid details");
         }
     }
+
+//    // ApplicationService.java
+//    public ApplicationDTO addApplication(ApplicationDTO applicationDTO) throws Exception {
+//        if (validateMobileNumber(applicationDTO.getMobileNo())
+//                && if (applicationDTO.getAlternateNo() != null) {
+//            validateMobileNumber1(applicationDTO.getAlternateNo())
+//        } else {
+//                 &&validateEmail(applicationDTO.getMailID())
+//        }  &&validateEmail(applicationDTO.getMailID()))
+//
+//            Application application = ApplicationMapper.toApplicationEntity(applicationDTO);
+//            Application savedApplication = applicationRepository.save(application);
+//
+//            // Map the qualifications
+//            List<QualificationDTO> qualificationDTOs = applicationDTO.getQualifications();
+//            if (qualificationDTOs != null) {
+//                for (QualificationDTO qualificationDTO : qualificationDTOs) {
+//                    Qualification qualification = QualificationMapper.toQualification(qualificationDTO);
+//                    qualification.setApplication(savedApplication);
+//                    savedApplication.getQualifications().add(qualification);
+//                }
+//                applicationRepository.save(savedApplication);
+//            }
+//
+//            ApplicationDTO savedApplicationDTO = ApplicationMapper.toApplicationDTO(savedApplication);
+//            return savedApplicationDTO;
+//        } else{
+//            throw new Exception("User not created due to invalid details");
+//        }
+//
+//    }
 
     public List<ApplicationDTO> getAllApplication() {
         List<Application> applicationList = applicationRepository.findAll();
@@ -224,18 +258,14 @@ public class ApplicationService {
         if ((applicationDTO.getLastName() == null) || applicationDTO.getLastName().isEmpty()) {
             throw new Exception("Last Name is required");
         }
-        if ((applicationDTO.getMailID() == null) || applicationDTO.getMailID().isEmpty()) {
-            throw new Exception("Mail ID is required");
+
+        if ((applicationDTO.getMailID() == null) || !Pattern.matches(EMAIL_REGEX,applicationDTO.getMailID())){
+            throw new Exception(" Invalid Email ID");
         }
-//        if ((applicationDTO.getEducation() == null) || applicationDTO.getEducation().isEmpty()) {
-//            throw new Exception("Education is required");
-//        }
-        if ((applicationDTO.getMobileNo() == null) || applicationDTO.getMobileNo().isEmpty()) {
-            throw new Exception("Mobile Number is required");
+
+        if ((applicationDTO.getMobileNo() == null) || !Pattern.matches(MOBILE_REGEX,applicationDTO.getMobileNo())){
+            throw new Exception(" Invalid Mobile Number");
         }
-//        if ((applicationDTO.getAlternateNo() == null) || applicationDTO.getAlternateNo().isEmpty()) {
-//            throw new Exception("Alternate Mobile Number is required");
-//        }
         if ((applicationDTO.getFatherName() == null) || applicationDTO.getFatherName().isEmpty()) {
             throw new Exception("Father's Name is required");
         }

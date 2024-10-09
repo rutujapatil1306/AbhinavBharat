@@ -17,7 +17,7 @@ public class Qualification
     private String passingYear;
     private Double percentage;
 
-    @ManyToOne (fetch = FetchType.LAZY)
+    @ManyToOne //(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicationId", nullable = false)
     private Application application;
 
