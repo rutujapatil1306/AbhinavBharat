@@ -6,23 +6,30 @@ import lombok.Data;
 
 @Entity
 @Data
-public class Qualification
+public class Address {
 
-{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer QualificationId;
+    private Integer addressId;
 
-    private String standard;
-    private String university;
-    private String passingYear;
-    private Double percentage;
+    @Column(nullable = false)
+    private String streetAddress;
+
+    @Column(nullable = false)
+    private String taluka;
+
+    @Column(nullable = false)
+    private String district;
+
+    @Column(nullable = false)
+    private String state;
+
+    @Column(nullable = false)
+    private String pincode;
+
 
     @ManyToOne
     @JoinColumn(name = "applicationId", nullable = false)
     @JsonBackReference
     private Application application;
-
 }
-
-

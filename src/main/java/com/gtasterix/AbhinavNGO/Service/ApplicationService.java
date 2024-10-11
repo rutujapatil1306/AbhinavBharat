@@ -1,16 +1,25 @@
 package com.gtasterix.AbhinavNGO.Service;
 
 
+import com.gtasterix.AbhinavNGO.DTO.AddressDTO;
 import com.gtasterix.AbhinavNGO.DTO.ApplicationDTO;
 import com.gtasterix.AbhinavNGO.DTO.QualificationDTO;
+import com.gtasterix.AbhinavNGO.mapper.AddressMapper;
 import com.gtasterix.AbhinavNGO.mapper.ApplicationMapper;
 import com.gtasterix.AbhinavNGO.mapper.QualificationMapper;
+import com.gtasterix.AbhinavNGO.model.Address;
 import com.gtasterix.AbhinavNGO.model.Application;
 import com.gtasterix.AbhinavNGO.model.Qualification;
+import com.gtasterix.AbhinavNGO.repository.AddressRepository;
 import com.gtasterix.AbhinavNGO.repository.ApplicationRepository;
+import com.gtasterix.AbhinavNGO.repository.QualificationRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -21,11 +30,19 @@ public class ApplicationService {
     @Autowired
     private ApplicationRepository applicationRepository;
 
-//    @Autowired
-//    private static ModelMapper modelMapper;
+   @Autowired
+   private QualificationRepository qualificationRepository;
+
+   @Autowired
+   private AddressRepository addressRepository;
+
+    @Autowired
+    private AddressMapper addressMapper;
 
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     private static final String MOBILE_REGEX = "^[6-9][0-9]{9}$";
+    private static final String AADHAARCARD_REGEX = "^[2-9]{1}[0-9]{11}$";
+    private static final String PANCARD_REGEX = "^[A-Z]{5}[0-9]{4}[A-Z]{1}$";
 
 
     private static boolean validateMobileNumber(String first_MobileNo) {
@@ -37,12 +54,11 @@ public class ApplicationService {
     }
 
     private static boolean validateMobileNumber1(String second_MobileNo) {
-        if ( !Pattern.matches(MOBILE_REGEX, second_MobileNo)) {
+        if (!Pattern.matches(MOBILE_REGEX, second_MobileNo)) {
             throw new IllegalArgumentException("Invalid mobile number format");
         }
         return true;
     }
-
 
     private static boolean validateEmail(String mailId) {
         if (mailId == null || !Pattern.matches(EMAIL_REGEX, mailId)) {
@@ -51,64 +67,94 @@ public class ApplicationService {
         return true;
     }
 
+    private Boolean validatePan(String pan) {
+        if (pan == null || !Pattern.matches(PANCARD_REGEX, pan)) {
+            throw new IllegalArgumentException("Invalid PAN card format");
+        }
+        return true;
+    }
+
+    private Boolean validateAadhaar(String aadhaar) {
+        if (aadhaar == null || !Pattern.matches(AADHAARCARD_REGEX, aadhaar)) {
+            throw new IllegalArgumentException("Invalid Aadhaar number format");
+        }
+        return true;
+    }
+
+    private Boolean validateDob(String dob) {
+        if (dob == null) {
+            throw new IllegalArgumentException("Date of birth cannot be null.");
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d/M/yyyy");
+        try {
+            LocalDate parsedDate = LocalDate.parse(dob, formatter);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date of birth format or logical date.");
+        }
+        return true;
+    }
+
+    @Transactional
     public ApplicationDTO addApplication(ApplicationDTO applicationDTO) throws Exception {
-        if (validateMobileNumber(applicationDTO.getMobileNo())
-                && validateEmail(applicationDTO.getMailID())) {
+
+        applicationDTO.setPanCardNo(applicationDTO.getPanCardNo().toUpperCase()); // Convert PAN to uppercase
+
+        if (applicationRepository.findByMailId(applicationDTO.getMailID()).isPresent()) {
+            throw new IllegalArgumentException("Email ID is already in use.");
+        }
+        if (applicationRepository.findByAadharNo(applicationDTO.getAdharCard()).isPresent()) {
+            throw new IllegalArgumentException("Aadhar no. is already in use.");
+        }
+
+        if (validateEmail(applicationDTO.getMailID()) && validateMobileNumber(applicationDTO.getMobileNo())
+                && validateAadhaar(applicationDTO.getAdharCard()) && validatePan(applicationDTO.getPanCardNo())
+                && validateDob(applicationDTO.getDob())) {
             if (applicationDTO.getAlternateNo() != null) {
-                validateMobileNumber1(applicationDTO.getAlternateNo());
+                validateMobileNumber(applicationDTO.getAlternateNo());
             }
 
             Application application = ApplicationMapper.toApplicationEntity(applicationDTO);
             Application savedApplication = applicationRepository.save(application);
 
-            // Map the qualifications
+            // Save the qualifications
             List<QualificationDTO> qualificationDTOs = applicationDTO.getQualifications();
             if (qualificationDTOs != null) {
                 for (QualificationDTO qualificationDTO : qualificationDTOs) {
                     Qualification qualification = QualificationMapper.toQualification(qualificationDTO);
                     qualification.setApplication(savedApplication);
-                    savedApplication.getQualifications().add(qualification);
+                    qualificationRepository.save(qualification);
                 }
-                applicationRepository.save(savedApplication);
             }
 
-            ApplicationDTO savedApplicationDTO = ApplicationMapper.toApplicationDTO(savedApplication);
-            return savedApplicationDTO;
+            List<AddressDTO> addressDTOs = applicationDTO.getAddresses();
+            if (addressDTOs != null) {
+                for (AddressDTO addressDTO : addressDTOs) {
+                    Address address = AddressMapper.toAddress(addressDTO);
+                    address.setApplication(savedApplication);
+                    addressRepository.save(address);
+                }
+            }
+
+//            List<AddressDTO> addressDTOs = applicationDTO.getAddresses();
+//            if (addressDTOs != null) {
+//                for (AddressDTO addressDTO : addressDTOs) {
+//                    Address address = AddressMapper.toAddressEntity(addressDTO, savedApplication);
+//                    addressRepository.save(address);
+//                }
+//            }
+
+            // Save the application with qualifications and addresses
+            applicationRepository.save(savedApplication);
+
+            // Map the saved entity back to DTO
+            return ApplicationMapper.toApplicationDTO(savedApplication);
+
         } else {
-            throw new Exception("User  not created due to invalid details");
+            throw new Exception("User not created due to invalid details");
         }
     }
 
-//    // ApplicationService.java
-//    public ApplicationDTO addApplication(ApplicationDTO applicationDTO) throws Exception {
-//        if (validateMobileNumber(applicationDTO.getMobileNo())
-//                && if (applicationDTO.getAlternateNo() != null) {
-//            validateMobileNumber1(applicationDTO.getAlternateNo())
-//        } else {
-//                 &&validateEmail(applicationDTO.getMailID())
-//        }  &&validateEmail(applicationDTO.getMailID()))
-//
-//            Application application = ApplicationMapper.toApplicationEntity(applicationDTO);
-//            Application savedApplication = applicationRepository.save(application);
-//
-//            // Map the qualifications
-//            List<QualificationDTO> qualificationDTOs = applicationDTO.getQualifications();
-//            if (qualificationDTOs != null) {
-//                for (QualificationDTO qualificationDTO : qualificationDTOs) {
-//                    Qualification qualification = QualificationMapper.toQualification(qualificationDTO);
-//                    qualification.setApplication(savedApplication);
-//                    savedApplication.getQualifications().add(qualification);
-//                }
-//                applicationRepository.save(savedApplication);
-//            }
-//
-//            ApplicationDTO savedApplicationDTO = ApplicationMapper.toApplicationDTO(savedApplication);
-//            return savedApplicationDTO;
-//        } else{
-//            throw new Exception("User not created due to invalid details");
-//        }
-//
-//    }
+
 
     public List<ApplicationDTO> getAllApplication() {
         List<Application> applicationList = applicationRepository.findAll();
@@ -128,7 +174,6 @@ public class ApplicationService {
         }
     }
 
-
     public ApplicationDTO getByfirstName(String firstName) throws Exception {
         Application applicationName = applicationRepository.findByFirstName(firstName)
                 .orElse(null);
@@ -139,105 +184,128 @@ public class ApplicationService {
         }
     }
 
-
     public ApplicationDTO updateById(Integer id, ApplicationDTO updatedApplicationDTO) throws Exception {
+        // Retrieve the existing application by ID
         Application existingApplication = applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("ID Not Found"));
-        if (existingApplication != null) {
 
-            ValidateApplicationDTO(updatedApplicationDTO);
+        // Validate the incoming DTO
+        validateApplicationDTO(updatedApplicationDTO);
 
-            // existingApplication.setId(updatedApplicationDTO.getId());
-            existingApplication.setFirstName(updatedApplicationDTO.getFirstName());
-            existingApplication.setLastName(updatedApplicationDTO.getLastName());
-            existingApplication.setMailID(updatedApplicationDTO.getMailID());
-            //existingApplication.setEducation(updatedApplicationDTO.getEducation());
-            existingApplication.setMobileNo(updatedApplicationDTO.getMobileNo());
-            existingApplication.setAlternateNo(updatedApplicationDTO.getAlternateNo());
-            existingApplication.setFatherName(updatedApplicationDTO.getFatherName());
-            existingApplication.setMotherName(updatedApplicationDTO.getMotherName());
-            existingApplication.setDob(updatedApplicationDTO.getDob());
-            existingApplication.setAddress(updatedApplicationDTO.getAddress());
-            existingApplication.setState(updatedApplicationDTO.getState());
-            existingApplication.setPinCode(updatedApplicationDTO.getPinCode());
-            existingApplication.setCategory(updatedApplicationDTO.getCategory());
-            existingApplication.setMaritalStatus(updatedApplicationDTO.getMaritalStatus());
-            existingApplication.setReligion(updatedApplicationDTO.getReligion());
-            existingApplication.setCitizenOfIndia(updatedApplicationDTO.getCitizenOfIndia());
-            existingApplication.setAnyDisability(updatedApplicationDTO.getAnyDisability());
+        existingApplication.setApplyFor(updatedApplicationDTO.getApplyFor());
+        existingApplication.setFirstName(updatedApplicationDTO.getFirstName());
+        existingApplication.setMiddleName(updatedApplicationDTO.getMiddleName());
+        existingApplication.setLastName(updatedApplicationDTO.getLastName());
+        existingApplication.setGender(updatedApplicationDTO.getGender());
+        existingApplication.setMailID(updatedApplicationDTO.getMailID());
+        existingApplication.setMobileNo(updatedApplicationDTO.getMobileNo());
+        existingApplication.setAlternateNo(updatedApplicationDTO.getAlternateNo());
+        existingApplication.setDob(updatedApplicationDTO.getDob());
+        existingApplication.setMaritalStatus(updatedApplicationDTO.getMaritalStatus());
+        existingApplication.setAdharCard(updatedApplicationDTO.getAdharCard());
+        existingApplication.setPanCardNo(updatedApplicationDTO.getPanCardNo());
+        existingApplication.setOrganizationName(updatedApplicationDTO.getOrganizationName());
+        existingApplication.setWorkingLocation(updatedApplicationDTO.getWorkingLocation());
+        existingApplication.setPosition(updatedApplicationDTO.getPosition());
+        existingApplication.setTypeOfEngagement(updatedApplicationDTO.getTypeOfEngagement());
+        existingApplication.setExperienceYear(updatedApplicationDTO.getExperienceYear());
+        existingApplication.setExperienceMonths(updatedApplicationDTO.getExperienceMonths());
+        existingApplication.setExperienceDays(updatedApplicationDTO.getExperienceDays());
 
-            applicationRepository.save(existingApplication);
+        applicationRepository.save(existingApplication);
 
-            return ApplicationMapper.toApplicationDTO(existingApplication);
-        } else {
-            throw new Exception("Application with ID " + id + " not found.");
-        }
+        return ApplicationMapper.toApplicationDTO(existingApplication);
     }
 
-
     public ApplicationDTO patchById(Integer id, ApplicationDTO patchBody) throws Exception {
-        Application existingApplication = applicationRepository.findById(id).orElse(null);
+        Application existingApplication = applicationRepository.findById(id).orElseThrow(() -> new Exception("Application with ID " + id + " not found."));
 
-        if (existingApplication != null) {
 
-            if (patchBody.getFirstName() != null) {
-                existingApplication.setFirstName(patchBody.getFirstName());
-            }
-            if (patchBody.getLastName() != null) {
-                existingApplication.setLastName(patchBody.getLastName());
-            }
-            if (patchBody.getMailID() != null) {
-                validateEmail(patchBody.getMailID());
-                existingApplication.setMailID(patchBody.getMailID());
-            }
-//            if (patchBody.getEducation() != null) {
-//                existingApplication.setEducation(patchBody.getEducation());
-//            }
-            if (patchBody.getMobileNo() != null) {
-                validateMobileNumber(patchBody.getMobileNo());
-                existingApplication.setMobileNo(patchBody.getMobileNo());
-            }
-            if (patchBody.getAlternateNo() != null) {
-                existingApplication.setAlternateNo(patchBody.getAlternateNo());
-            }
-            if (patchBody.getFatherName() != null) {
-                existingApplication.setFatherName(patchBody.getFatherName());
-            }
-            if (patchBody.getMotherName() != null) {
-                existingApplication.setMotherName(patchBody.getMotherName());
-            }
-            if (patchBody.getDob() != null) {
-                existingApplication.setDob(patchBody.getDob());
-            }
-            if (patchBody.getAddress() != null) {
-                existingApplication.setAddress(patchBody.getAddress());
-            }
-            if (patchBody.getState() != null) {
-                existingApplication.setState(patchBody.getState());
-            }
-            if (patchBody.getPinCode() != null) {
-                existingApplication.setPinCode(patchBody.getPinCode());
-            }
-            if (patchBody.getCategory() != null) {
-                existingApplication.setCategory(patchBody.getCategory());
-            }
-            if (patchBody.getMaritalStatus() != null) {
-                existingApplication.setMaritalStatus(patchBody.getMaritalStatus());
-            }
-            if (patchBody.getReligion() != null) {
-                existingApplication.setReligion(patchBody.getReligion());
-            }
-            if (patchBody.getCitizenOfIndia() != null) {
-                existingApplication.setCitizenOfIndia(patchBody.getCitizenOfIndia());
-            }
-            if (patchBody.getAnyDisability() != null) {
-                existingApplication.setAnyDisability(patchBody.getAnyDisability());
-            }
-            applicationRepository.save(existingApplication);
-            return ApplicationMapper.toApplicationDTO(existingApplication);
-        } else {
-            throw new Exception ("Application with ID " + id + " not found.");
+        if (patchBody.getFirstName() != null) {
+            existingApplication.setFirstName(patchBody.getFirstName());
         }
+        if (patchBody.getMiddleName() != null) {
+            existingApplication.setMiddleName(patchBody.getMiddleName());
+        }
+        if (patchBody.getLastName() != null) {
+            existingApplication.setLastName(patchBody.getLastName());
+        }
+        if (patchBody.getMailID() != null) {
+            validateEmail(patchBody.getMailID());
+            existingApplication.setMailID(patchBody.getMailID());
+        }
+        if (patchBody.getMobileNo() != null) {
+            validateMobileNumber(patchBody.getMobileNo());
+            existingApplication.setMobileNo(patchBody.getMobileNo());
+        }
+        if (patchBody.getAlternateNo() != null) {
+            existingApplication.setAlternateNo(patchBody.getAlternateNo());
+        }
+        if (patchBody.getDob() != null) {
+            existingApplication.setDob(patchBody.getDob());
+        }
+        if (patchBody.getMaritalStatus() != null) {
+            existingApplication.setMaritalStatus(patchBody.getMaritalStatus());
+        }
+        if (patchBody.getAdharCard() != null) {
+            existingApplication.setAdharCard(patchBody.getAdharCard());
+        }
+        if (patchBody.getPanCardNo() != null) {
+            existingApplication.setPanCardNo(patchBody.getPanCardNo());
+        }
+        if (patchBody.getOrganizationName() != null) {
+            existingApplication.setOrganizationName(patchBody.getOrganizationName());
+        }
+        if (patchBody.getWorkingLocation() != null) {
+            existingApplication.setWorkingLocation(patchBody.getWorkingLocation());
+        }
+        if (patchBody.getPosition() != null) {
+            existingApplication.setPosition(patchBody.getPosition());
+        }
+        if (patchBody.getTypeOfEngagement() != null) {
+            existingApplication.setTypeOfEngagement(patchBody.getTypeOfEngagement());
+        }
+        if (patchBody.getExperienceYear() != null) {
+            existingApplication.setExperienceYear(patchBody.getExperienceYear());
+        }
+        if (patchBody.getExperienceMonths() != null) {
+            existingApplication.setExperienceMonths(patchBody.getExperienceMonths());
+        }
+        if (patchBody.getExperienceDays() != null) {
+            existingApplication.setExperienceDays(patchBody.getExperienceDays());
+        }
+
+        // Patch qualifications
+        if (patchBody.getQualifications() != null) {
+            existingApplication.getQualifications().clear();
+            for (QualificationDTO qualificationDTO : patchBody.getQualifications()) {
+                Qualification qualification = new Qualification();
+                qualification.setStandard(qualificationDTO.getStandard());
+                qualification.setUniversity(qualificationDTO.getUniversity());
+                qualification.setPassingYear(qualificationDTO.getPassingYear());
+                qualification.setPercentage(qualificationDTO.getPercentage());
+                qualification.setApplication(existingApplication); // link the qualification to the application
+                existingApplication.getQualifications().add(qualification);
+            }
+        }
+
+        if (patchBody.getAddresses() != null) {
+            existingApplication.getAddresses().clear();
+            for (AddressDTO addressDTO : patchBody.getAddresses()) {
+                Address address = new Address();
+                address.setStreetAddress(addressDTO.getStreetAddress());
+                address.setPincode(addressDTO.getPincode());
+                address.setState(addressDTO.getState());
+                address.setDistrict(addressDTO.getDistrict());
+                address.setTaluka(addressDTO.getTaluka());
+                address.setApplication(existingApplication); // link the address to the application
+                existingApplication.getAddresses().add(address);
+            }
+        }
+
+        applicationRepository.save(existingApplication);
+
+        return ApplicationMapper.toApplicationDTO(existingApplication);
     }
 
     public ApplicationDTO deleteById(Integer id) throws Exception {
@@ -250,58 +318,47 @@ public class ApplicationService {
         }
     }
 
-
-    private void ValidateApplicationDTO(ApplicationDTO applicationDTO) throws Exception {
+    private void validateApplicationDTO(ApplicationDTO applicationDTO) throws Exception {
         if ((applicationDTO.getFirstName() == null) || applicationDTO.getFirstName().isEmpty()) {
             throw new Exception("First Name is required");
+        }
+        if ((applicationDTO.getMiddleName() == null) || applicationDTO.getMiddleName().isEmpty()) {
+            throw new Exception("Middle Name is required");
         }
         if ((applicationDTO.getLastName() == null) || applicationDTO.getLastName().isEmpty()) {
             throw new Exception("Last Name is required");
         }
-
-        if ((applicationDTO.getMailID() == null) || !Pattern.matches(EMAIL_REGEX,applicationDTO.getMailID())){
-            throw new Exception(" Invalid Email ID");
+        if ((applicationDTO.getGender() == null) || applicationDTO.getGender().isEmpty()) {
+            throw new Exception("Gender is required");
         }
-
-        if ((applicationDTO.getMobileNo() == null) || !Pattern.matches(MOBILE_REGEX,applicationDTO.getMobileNo())){
-            throw new Exception(" Invalid Mobile Number");
+        if ((applicationDTO.getMailID() == null) || !Pattern.matches(EMAIL_REGEX, applicationDTO.getMailID())) {
+            throw new Exception("Invalid Email ID");
         }
-        if ((applicationDTO.getFatherName() == null) || applicationDTO.getFatherName().isEmpty()) {
-            throw new Exception("Father's Name is required");
-        }
-        if ((applicationDTO.getMotherName() == null) || applicationDTO.getMotherName().isEmpty()) {
-            throw new Exception("Mother's Name is required");
+        if ((applicationDTO.getMobileNo() == null) || !Pattern.matches(MOBILE_REGEX, applicationDTO.getMobileNo())) {
+            throw new Exception("Invalid Mobile Number");
         }
         if ((applicationDTO.getDob() == null) || applicationDTO.getDob().isEmpty()) {
             throw new Exception("Date of Birth is required");
         }
-        if ((applicationDTO.getAddress() == null) || applicationDTO.getAddress().isEmpty()) {
-            throw new Exception("Address is required");
-        }
-        if ((applicationDTO.getState() == null) || applicationDTO.getState().isEmpty()) {
-            throw new Exception("State is required");
-        }
-        if ((applicationDTO.getPinCode() == null) || applicationDTO.getPinCode().isEmpty()) {
-            throw new Exception("Pin Code is required");
-        }
-        if ((applicationDTO.getCategory() == null) || applicationDTO.getCategory().isEmpty()) {
-            throw new Exception("Category is required");
-        }
         if ((applicationDTO.getMaritalStatus() == null) || applicationDTO.getMaritalStatus().isEmpty()) {
             throw new Exception("Marital Status is required");
         }
-        if ((applicationDTO.getReligion() == null) || applicationDTO.getReligion().isEmpty()) {
-            throw new Exception("Religion is required");
+        if ((applicationDTO.getAdharCard() == null) || !Pattern.matches(AADHAARCARD_REGEX,applicationDTO.getAdharCard())) {
+            throw new Exception("Aadhar Card is required");
         }
-        if ((applicationDTO.getCitizenOfIndia() == null) || applicationDTO.getCitizenOfIndia().isEmpty()) {
-            throw new Exception("Citizen of India is required");
+        if ((applicationDTO.getPanCardNo() == null) || !Pattern.matches(PANCARD_REGEX,applicationDTO.getPanCardNo())) {
+            throw new Exception("PAN Card Number is required");
         }
-        if ((applicationDTO.getAnyDisability() == null) || applicationDTO.getAnyDisability().isEmpty()) {
-            throw new Exception("Disability information is required");
+        if ((applicationDTO.getExperienceYear() != null && !applicationDTO.getExperienceYear().isEmpty())){
+            throw new Exception("Experience Year must be a valid number");
+        }
+        if ((applicationDTO.getExperienceMonths() != null && !applicationDTO.getExperienceMonths().isEmpty())){
+            throw new Exception("Experience Months must be a valid number");
+        }
+        if ((applicationDTO.getExperienceDays() != null && !applicationDTO.getExperienceDays().isEmpty())){
+            throw new Exception("Experience Days must be a valid number");
         }
     }
-
-
 }
 
 

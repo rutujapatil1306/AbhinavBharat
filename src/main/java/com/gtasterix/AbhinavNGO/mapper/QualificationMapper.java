@@ -4,15 +4,13 @@ import com.gtasterix.AbhinavNGO.DTO.QualificationDTO;
 import com.gtasterix.AbhinavNGO.model.Application;
 import com.gtasterix.AbhinavNGO.model.Qualification;
 
-// QualificationMapper.java
 public class QualificationMapper {
 
-    public static QualificationDTO toQualificationDTO (Qualification qualification){
-
+    public static QualificationDTO toQualificationDTO(Qualification qualification) {
         QualificationDTO qualificationDTO = new QualificationDTO();
 
-        qualificationDTO.setApplicationId(qualification.getApplication().getApplicationId());
-        qualificationDTO.setId(qualification.getQualificationId());
+        qualificationDTO.setApplicationId(qualification.getApplication() != null ? qualification.getApplication().getApplicationId() : null);
+        qualificationDTO.setQualificationId(qualification.getQualificationId());
         qualificationDTO.setPercentage(qualification.getPercentage());
         qualificationDTO.setStandard(qualification.getStandard());
         qualificationDTO.setUniversity(qualification.getUniversity());
@@ -20,24 +18,22 @@ public class QualificationMapper {
         return qualificationDTO;
     }
 
-    public static Qualification toQualification (QualificationDTO qualificationDTO){
-
+    public static Qualification toQualification(QualificationDTO qualificationDTO) {
         Qualification qualification = new Qualification();
 
-        qualification.setQualificationId(qualificationDTO.getId());
+        qualification.setQualificationId(qualificationDTO.getQualificationId());
         qualification.setPercentage(qualificationDTO.getPercentage());
         qualification.setStandard(qualificationDTO.getStandard());
         qualification.setUniversity(qualificationDTO.getUniversity());
         qualification.setPassingYear(qualificationDTO.getPassingYear());
 
         // Set the application
-        Application application = new Application();
-        application.setApplicationId(qualificationDTO.getApplicationId());
-        qualification.setApplication(application);
+        if (qualificationDTO.getApplicationId() != null) {
+            Application application = new Application();
+            application.setApplicationId(qualificationDTO.getApplicationId());
+            qualification.setApplication(application);
+        }
 
         return qualification;
     }
-
-
-
 }

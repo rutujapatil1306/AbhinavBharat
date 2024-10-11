@@ -8,6 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application,Integer> {
-
     Optional<Application> findByFirstName(String firstName);
+    Optional<Application> findByMailId(String mailId);
+    Optional<Application> findByAadharNo(String AdharCard);
 }

@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class QualificationDTO {
 
-    private Integer id;
+    private Integer QualificationId;
     private String standard;
     private String university;
     private String passingYear;

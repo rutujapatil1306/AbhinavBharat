@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 
-public interface QualificationRepository extends JpaRepository<Qualification,Integer> {
-
+public interface QualificationRepository extends JpaRepository<Qualification, Integer> {
+    Qualification findByStandardAndUniversityAndPassingYear(String standard, String university, String passingYear);
 }
