@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Service
@@ -99,10 +100,10 @@ public class ApplicationService {
 
         applicationDTO.setPanCardNo(applicationDTO.getPanCardNo().toUpperCase()); // Convert PAN to uppercase
 
-        if (applicationRepository.findByMailId(applicationDTO.getMailID()).isPresent()) {
+        if (applicationRepository.findByMailID(applicationDTO.getMailID()).isPresent()) {
             throw new IllegalArgumentException("Email ID is already in use.");
         }
-        if (applicationRepository.findByAadharNo(applicationDTO.getAdharCard()).isPresent()) {
+        if (applicationRepository.findByAdharCard(applicationDTO.getAdharCard()).isPresent()) {
             throw new IllegalArgumentException("Aadhar no. is already in use.");
         }
 
@@ -130,19 +131,30 @@ public class ApplicationService {
             if (addressDTOs != null) {
                 for (AddressDTO addressDTO : addressDTOs) {
                     Address address = AddressMapper.toAddress(addressDTO);
-                    address.setApplication(savedApplication);
-                    addressRepository.save(address);
-                }
+                    // Check if the address already exists for the current application
+                    Optional<Address> existingAddress = addressRepository.findByApplicationAndStreetAddressAndDistrictAndPincodeAndStateAndTaluka(
+                            savedApplication, address.getStreetAddress(), address.getDistrict(), address.getPincode(), address.getState(),address.getTaluka());
+
+                    if (existingAddress.isEmpty()) {
+                        // If the address is not found, save the new address
+                        address.setApplication(savedApplication);
+                        addressRepository.save(address);
+                    } else {
+                        // Optionally handle duplicate address scenario (e.g., log or ignore)
+                       new Exception("Duplicate address found, skipping save: " + addressDTO);
+                    }
+
+             }
             }
 
 //            List<AddressDTO> addressDTOs = applicationDTO.getAddresses();
 //            if (addressDTOs != null) {
 //                for (AddressDTO addressDTO : addressDTOs) {
-//                    Address address = AddressMapper.toAddressEntity(addressDTO, savedApplication);
+//                    Address address = AddressMapper.toAddress(addressDTO);
+//                    address.setApplication(savedApplication);
 //                    addressRepository.save(address);
 //                }
 //            }
-
             // Save the application with qualifications and addresses
             applicationRepository.save(savedApplication);
 
@@ -153,8 +165,6 @@ public class ApplicationService {
             throw new Exception("User not created due to invalid details");
         }
     }
-
-
 
     public List<ApplicationDTO> getAllApplication() {
         List<Application> applicationList = applicationRepository.findAll();
@@ -217,65 +227,75 @@ public class ApplicationService {
         return ApplicationMapper.toApplicationDTO(existingApplication);
     }
 
-    public ApplicationDTO patchById(Integer id, ApplicationDTO patchBody) throws Exception {
-        Application existingApplication = applicationRepository.findById(id).orElseThrow(() -> new Exception("Application with ID " + id + " not found."));
+    public ApplicationDTO patchById(Integer applicationId, ApplicationDTO patchBody) {
+        Application existingApplication = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application with ID " + applicationId + " not found"));
 
-
-        if (patchBody.getFirstName() != null) {
+        if (patchBody.getApplyFor() != null && !patchBody.getApplyFor().isEmpty()) {
+            existingApplication.setApplyFor(patchBody.getApplyFor());
+        }
+        if (patchBody.getFirstName() != null && !patchBody.getFirstName().isEmpty()) {
             existingApplication.setFirstName(patchBody.getFirstName());
         }
-        if (patchBody.getMiddleName() != null) {
+        if (patchBody.getMiddleName() != null && !patchBody.getMiddleName().isEmpty()) {
             existingApplication.setMiddleName(patchBody.getMiddleName());
         }
-        if (patchBody.getLastName() != null) {
+        if (patchBody.getLastName() != null && !patchBody.getLastName().isEmpty()) {
             existingApplication.setLastName(patchBody.getLastName());
         }
-        if (patchBody.getMailID() != null) {
+        if (patchBody.getGender() != null && !patchBody.getGender().isEmpty()) {
+            existingApplication.setGender(patchBody.getGender());
+        }
+        if (patchBody.getMailID() != null && !patchBody.getMailID().isEmpty()) {
             validateEmail(patchBody.getMailID());
             existingApplication.setMailID(patchBody.getMailID());
         }
-        if (patchBody.getMobileNo() != null) {
+        if (patchBody.getMobileNo() != null && !patchBody.getMobileNo().isEmpty()) {
             validateMobileNumber(patchBody.getMobileNo());
             existingApplication.setMobileNo(patchBody.getMobileNo());
         }
-        if (patchBody.getAlternateNo() != null) {
+        if (patchBody.getAlternateNo() != null && !patchBody.getAlternateNo().isEmpty()) {
+            validateMobileNumber(patchBody.getAlternateNo());
             existingApplication.setAlternateNo(patchBody.getAlternateNo());
         }
-        if (patchBody.getDob() != null) {
+        if (patchBody.getDob() != null && !patchBody.getDob().isEmpty()) {
+            validateDob(patchBody.getDob());
             existingApplication.setDob(patchBody.getDob());
         }
-        if (patchBody.getMaritalStatus() != null) {
+        if (patchBody.getMaritalStatus() != null && !patchBody.getMaritalStatus().isEmpty()) {
             existingApplication.setMaritalStatus(patchBody.getMaritalStatus());
         }
-        if (patchBody.getAdharCard() != null) {
+        if (patchBody.getAdharCard() != null && !patchBody.getAdharCard().isEmpty()) {
+            validateAadhaar(patchBody.getAdharCard());
             existingApplication.setAdharCard(patchBody.getAdharCard());
         }
-        if (patchBody.getPanCardNo() != null) {
-            existingApplication.setPanCardNo(patchBody.getPanCardNo());
+        if (patchBody.getPanCardNo() != null && !patchBody.getPanCardNo().isEmpty()) {
+            validatePan(patchBody.getPanCardNo());
+            existingApplication.setPanCardNo(patchBody.getPanCardNo().toUpperCase());
         }
-        if (patchBody.getOrganizationName() != null) {
+        if (patchBody.getOrganizationName() != null && !patchBody.getOrganizationName().isEmpty()) {
             existingApplication.setOrganizationName(patchBody.getOrganizationName());
         }
-        if (patchBody.getWorkingLocation() != null) {
+        if (patchBody.getWorkingLocation() != null && !patchBody.getWorkingLocation().isEmpty()) {
             existingApplication.setWorkingLocation(patchBody.getWorkingLocation());
         }
-        if (patchBody.getPosition() != null) {
+        if (patchBody.getPosition() != null && !patchBody.getPosition().isEmpty()) {
             existingApplication.setPosition(patchBody.getPosition());
         }
-        if (patchBody.getTypeOfEngagement() != null) {
+        if (patchBody.getTypeOfEngagement() != null && !patchBody.getTypeOfEngagement().isEmpty()) {
             existingApplication.setTypeOfEngagement(patchBody.getTypeOfEngagement());
         }
-        if (patchBody.getExperienceYear() != null) {
+        if (patchBody.getExperienceYear() != null && !patchBody.getExperienceYear().isEmpty()) {
             existingApplication.setExperienceYear(patchBody.getExperienceYear());
         }
-        if (patchBody.getExperienceMonths() != null) {
+        if (patchBody.getExperienceMonths() != null && !patchBody.getExperienceMonths().isEmpty()) {
             existingApplication.setExperienceMonths(patchBody.getExperienceMonths());
         }
-        if (patchBody.getExperienceDays() != null) {
+        if (patchBody.getExperienceDays() != null && !patchBody.getExperienceDays().isEmpty()) {
             existingApplication.setExperienceDays(patchBody.getExperienceDays());
         }
 
-        // Patch qualifications
+    // Patch qualifications
         if (patchBody.getQualifications() != null) {
             existingApplication.getQualifications().clear();
             for (QualificationDTO qualificationDTO : patchBody.getQualifications()) {
