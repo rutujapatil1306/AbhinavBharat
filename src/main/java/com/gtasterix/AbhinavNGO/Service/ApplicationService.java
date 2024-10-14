@@ -47,7 +47,6 @@ public class ApplicationService {
 
 
     private static boolean validateMobileNumber(String first_MobileNo) {
-//        System.out.println("Validating mobile number: " + first_MobileNo);
         if (first_MobileNo == null || !Pattern.matches(MOBILE_REGEX, first_MobileNo)) {
             throw new IllegalArgumentException("Invalid mobile number fort");
         }
@@ -104,7 +103,10 @@ public class ApplicationService {
             throw new IllegalArgumentException("Email ID is already in use.");
         }
         if (applicationRepository.findByAdharCard(applicationDTO.getAdharCard()).isPresent()) {
-            throw new IllegalArgumentException("Aadhar no. is already in use.");
+            throw new IllegalArgumentException("AadhaarCard no. is already in use.");
+        }
+        if(applicationRepository.findByPanCardNo(applicationDTO.getPanCardNo()).isPresent()) {
+            throw new IllegalArgumentException("PanCard no. is already in use.");
         }
 
         if (validateEmail(applicationDTO.getMailID()) && validateMobileNumber(applicationDTO.getMobileNo())
@@ -117,52 +119,52 @@ public class ApplicationService {
             Application application = ApplicationMapper.toApplicationEntity(applicationDTO);
             Application savedApplication = applicationRepository.save(application);
 
-            // Save the qualifications
-            List<QualificationDTO> qualificationDTOs = applicationDTO.getQualifications();
-            if (qualificationDTOs != null) {
-                for (QualificationDTO qualificationDTO : qualificationDTOs) {
+            List<QualificationDTO> qualificationDTOS = applicationDTO.getQualifications();
+            if (qualificationDTOS != null) {
+                for (QualificationDTO qualificationDTO : qualificationDTOS) {
                     Qualification qualification = QualificationMapper.toQualification(qualificationDTO);
-                    qualification.setApplication(savedApplication);
-                    qualificationRepository.save(qualification);
+
+                    Optional<Qualification> existingQualification = qualificationRepository.findByApplicationAndStandardAndUniversityAndPassingYearAndPercentage(
+                            savedApplication, qualification.getStandard(), qualification.getUniversity(),
+                            qualification.getPassingYear(), qualification.getPercentage());
+
+                    // Check if the qualification already exists
+                    if (existingQualification.isEmpty()) {
+                        qualification.setApplication(savedApplication);
+                        qualificationRepository.save(qualification);
+                    } else {
+                        // Optionally handle duplicate qualification scenario (e.g., log or skip)
+                        // For example, you can log or simply skip saving
+                        new Exception("Duplicate qualification found, skipping save: " + qualificationDTO);
+                    }
                 }
+            } else {
+                throw new Exception("Qualification is Mandatory");
             }
 
             List<AddressDTO> addressDTOs = applicationDTO.getAddresses();
             if (addressDTOs != null) {
                 for (AddressDTO addressDTO : addressDTOs) {
                     Address address = AddressMapper.toAddress(addressDTO);
-                    // Check if the address already exists for the current application
+
                     Optional<Address> existingAddress = addressRepository.findByApplicationAndStreetAddressAndDistrictAndPincodeAndStateAndTaluka(
                             savedApplication, address.getStreetAddress(), address.getDistrict(), address.getPincode(), address.getState(),address.getTaluka());
 
                     if (existingAddress.isEmpty()) {
-                        // If the address is not found, save the new address
                         address.setApplication(savedApplication);
                         addressRepository.save(address);
                     } else {
                         // Optionally handle duplicate address scenario (e.g., log or ignore)
-                       new Exception("Duplicate address found, skipping save: " + addressDTO);
+                         new Exception("Duplicate address found, skipping save: " + addressDTO);
                     }
-
              }
+            } else {
+                throw new Exception("Address is Mandatory");
             }
-
-//            List<AddressDTO> addressDTOs = applicationDTO.getAddresses();
-//            if (addressDTOs != null) {
-//                for (AddressDTO addressDTO : addressDTOs) {
-//                    Address address = AddressMapper.toAddress(addressDTO);
-//                    address.setApplication(savedApplication);
-//                    addressRepository.save(address);
-//                }
-//            }
-            // Save the application with qualifications and addresses
             applicationRepository.save(savedApplication);
-
-            // Map the saved entity back to DTO
             return ApplicationMapper.toApplicationDTO(savedApplication);
-
         } else {
-            throw new Exception("User not created due to invalid details");
+            throw new Exception("Applicant not created due to invalid details");
         }
     }
 
@@ -221,6 +223,7 @@ public class ApplicationService {
         existingApplication.setExperienceYear(updatedApplicationDTO.getExperienceYear());
         existingApplication.setExperienceMonths(updatedApplicationDTO.getExperienceMonths());
         existingApplication.setExperienceDays(updatedApplicationDTO.getExperienceDays());
+
 
         applicationRepository.save(existingApplication);
 

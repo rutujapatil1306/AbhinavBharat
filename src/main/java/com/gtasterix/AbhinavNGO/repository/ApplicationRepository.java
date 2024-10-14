@@ -11,4 +11,5 @@ public interface ApplicationRepository extends JpaRepository<Application,Integer
     Optional<Application> findByFirstName(String firstName);
     Optional<Application> findByMailID(String mailID);
     Optional<Application> findByAdharCard(String AdharCard);
+    Optional<Application> findByPanCardNo(String panCardNo);
 }

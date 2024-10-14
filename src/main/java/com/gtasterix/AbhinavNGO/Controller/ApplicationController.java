@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequestMapping({"/api/application", "/api/qualification"})
+@RequestMapping("/api/application")
 @RestController
 public class ApplicationController {
 
