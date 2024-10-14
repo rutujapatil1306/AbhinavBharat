@@ -31,11 +31,11 @@ public class ApplicationService {
     @Autowired
     private ApplicationRepository applicationRepository;
 
-   @Autowired
-   private QualificationRepository qualificationRepository;
+    @Autowired
+    private QualificationRepository qualificationRepository;
 
-   @Autowired
-   private AddressRepository addressRepository;
+    @Autowired
+    private AddressRepository addressRepository;
 
     @Autowired
     private AddressMapper addressMapper;
@@ -105,7 +105,7 @@ public class ApplicationService {
         if (applicationRepository.findByAdharCard(applicationDTO.getAdharCard()).isPresent()) {
             throw new IllegalArgumentException("AadhaarCard no. is already in use.");
         }
-        if(applicationRepository.findByPanCardNo(applicationDTO.getPanCardNo()).isPresent()) {
+        if (applicationRepository.findByPanCardNo(applicationDTO.getPanCardNo()).isPresent()) {
             throw new IllegalArgumentException("PanCard no. is already in use.");
         }
 
@@ -148,16 +148,16 @@ public class ApplicationService {
                     Address address = AddressMapper.toAddress(addressDTO);
 
                     Optional<Address> existingAddress = addressRepository.findByApplicationAndStreetAddressAndDistrictAndPincodeAndStateAndTaluka(
-                            savedApplication, address.getStreetAddress(), address.getDistrict(), address.getPincode(), address.getState(),address.getTaluka());
+                            savedApplication, address.getStreetAddress(), address.getDistrict(), address.getPincode(), address.getState(), address.getTaluka());
 
                     if (existingAddress.isEmpty()) {
                         address.setApplication(savedApplication);
                         addressRepository.save(address);
                     } else {
                         // Optionally handle duplicate address scenario (e.g., log or ignore)
-                         new Exception("Duplicate address found, skipping save: " + addressDTO);
+                        new Exception("Duplicate address found, skipping save: " + addressDTO);
                     }
-             }
+                }
             } else {
                 throw new Exception("Address is Mandatory");
             }
@@ -204,6 +204,7 @@ public class ApplicationService {
         // Validate the incoming DTO
         validateApplicationDTO(updatedApplicationDTO);
 
+        // Update application fields (same as before)
         existingApplication.setApplyFor(updatedApplicationDTO.getApplyFor());
         existingApplication.setFirstName(updatedApplicationDTO.getFirstName());
         existingApplication.setMiddleName(updatedApplicationDTO.getMiddleName());
@@ -224,6 +225,58 @@ public class ApplicationService {
         existingApplication.setExperienceMonths(updatedApplicationDTO.getExperienceMonths());
         existingApplication.setExperienceDays(updatedApplicationDTO.getExperienceDays());
 
+        // Update existing qualifications without creating new rows
+        List<Qualification> existingQualifications = existingApplication.getQualifications();
+        List<QualificationDTO> updatedQualifications = updatedApplicationDTO.getQualifications();
+
+        for (QualificationDTO updatedQualification : updatedQualifications) {
+            for (Qualification existingQualification : existingQualifications) {
+                if (existingQualification.getQualificationId() != null &&
+                        existingQualification.getQualificationId().equals(updatedQualification.getQualificationId())) {
+                    // Update fields if they are present in the JSON
+                    if (updatedQualification.getStandard() != null) {
+                        existingQualification.setStandard(updatedQualification.getStandard());
+                    }
+                    if (updatedQualification.getUniversity() != null) {
+                        existingQualification.setUniversity(updatedQualification.getUniversity());
+                    }
+                    if (updatedQualification.getPassingYear() != null) {
+                        existingQualification.setPassingYear(updatedQualification.getPassingYear());
+                    }
+                    if (updatedQualification.getPercentage() != null) {
+                        existingQualification.setPercentage(updatedQualification.getPercentage());
+                    }
+                }
+            }
+        }
+
+        // Update existing addresses without creating new rows
+        List<Address> existingAddresses = existingApplication.getAddresses();
+        List<AddressDTO> updatedAddresses = updatedApplicationDTO.getAddresses();
+
+        for (AddressDTO updatedAddress : updatedAddresses) {
+            for (Address existingAddress : existingAddresses) {
+                if (existingAddress.getAddressId() != null &&
+                        existingAddress.getAddressId().equals(updatedAddress.getAddressId())) {
+                    // Update fields if they are present in the JSON
+                    if (updatedAddress.getStreetAddress() != null) {
+                        existingAddress.setStreetAddress(updatedAddress.getStreetAddress());
+                    }
+                    if (updatedAddress.getTaluka() != null) {
+                        existingAddress.setTaluka(updatedAddress.getTaluka());
+                    }
+                    if (updatedAddress.getDistrict() != null) {
+                        existingAddress.setDistrict(updatedAddress.getDistrict());
+                    }
+                    if (updatedAddress.getState() != null) {
+                        existingAddress.setState(updatedAddress.getState());
+                    }
+                    if (updatedAddress.getPincode() != null) {
+                        existingAddress.setPincode(updatedAddress.getPincode());
+                    }
+                }
+            }
+        }
 
         applicationRepository.save(existingApplication);
 
@@ -298,7 +351,7 @@ public class ApplicationService {
             existingApplication.setExperienceDays(patchBody.getExperienceDays());
         }
 
-    // Patch qualifications
+        // Patch qualifications
         if (patchBody.getQualifications() != null) {
             existingApplication.getQualifications().clear();
             for (QualificationDTO qualificationDTO : patchBody.getQualifications()) {
@@ -366,23 +419,65 @@ public class ApplicationService {
         if ((applicationDTO.getMaritalStatus() == null) || applicationDTO.getMaritalStatus().isEmpty()) {
             throw new Exception("Marital Status is required");
         }
-        if ((applicationDTO.getAdharCard() == null) || !Pattern.matches(AADHAARCARD_REGEX,applicationDTO.getAdharCard())) {
+        if ((applicationDTO.getAdharCard() == null) || !Pattern.matches(AADHAARCARD_REGEX, applicationDTO.getAdharCard())) {
             throw new Exception("Aadhar Card is required");
         }
-        if ((applicationDTO.getPanCardNo() == null) || !Pattern.matches(PANCARD_REGEX,applicationDTO.getPanCardNo())) {
+        if ((applicationDTO.getPanCardNo() == null) || !Pattern.matches(PANCARD_REGEX, applicationDTO.getPanCardNo())) {
             throw new Exception("PAN Card Number is required");
         }
-        if ((applicationDTO.getExperienceYear() != null && !applicationDTO.getExperienceYear().isEmpty())){
+        if ((applicationDTO.getExperienceYear() == null || applicationDTO.getExperienceYear().isEmpty())) {
             throw new Exception("Experience Year must be a valid number");
         }
-        if ((applicationDTO.getExperienceMonths() != null && !applicationDTO.getExperienceMonths().isEmpty())){
+        if ((applicationDTO.getExperienceMonths() == null || applicationDTO.getExperienceMonths().isEmpty())) {
             throw new Exception("Experience Months must be a valid number");
         }
-        if ((applicationDTO.getExperienceDays() != null && !applicationDTO.getExperienceDays().isEmpty())){
+        if ((applicationDTO.getExperienceDays() == null || applicationDTO.getExperienceDays().isEmpty())) {
             throw new Exception("Experience Days must be a valid number");
         }
+
+        // Validate and patch qualifications
+        if (applicationDTO.getQualifications() != null && !applicationDTO.getQualifications().isEmpty()) {
+            for (QualificationDTO qualificationDTO : applicationDTO.getQualifications()) {
+                if ((qualificationDTO.getStandard() == null) || qualificationDTO.getStandard().isEmpty()) {
+                    throw new Exception("Standard is required");
+                }
+                if ((qualificationDTO.getUniversity() == null) || qualificationDTO.getUniversity().isEmpty()) {
+                    throw new Exception("University is required");
+                }
+                if ((qualificationDTO.getPassingYear() == null) || qualificationDTO.getPassingYear().isEmpty()) {
+                    throw new Exception("Passing Year is required");
+                }
+                if ((qualificationDTO.getPercentage() == null) || qualificationDTO.getPercentage() < 0 || qualificationDTO.getPercentage() > 100) {
+                    throw new Exception("Percentage must be a valid number between 0 and 100");
+                }
+            }
+        }
+
+        // Validate and patch addresses
+        if (applicationDTO.getAddresses() != null && !applicationDTO.getAddresses().isEmpty()) {
+            for (AddressDTO addressDTO : applicationDTO.getAddresses()) {
+                if ((addressDTO.getStreetAddress() == null) || addressDTO.getStreetAddress().isEmpty()) {
+                    throw new Exception("Street Address is required");
+                }
+                if ((addressDTO.getTaluka() == null) || addressDTO.getTaluka().isEmpty()) {
+                    throw new Exception("Taluka is required");
+                }
+                if ((addressDTO.getDistrict() == null) || addressDTO.getDistrict().isEmpty()) {
+                    throw new Exception("District is required");
+                }
+                if ((addressDTO.getState() == null) || addressDTO.getState().isEmpty()) {
+                    throw new Exception("State is required");
+                }
+                if ((addressDTO.getPincode() == null) || addressDTO.getPincode().isEmpty()) {
+                    throw new Exception("Pincode is required");
+                }
+            }
+        }
+
     }
 }
+
+
 
 
 
