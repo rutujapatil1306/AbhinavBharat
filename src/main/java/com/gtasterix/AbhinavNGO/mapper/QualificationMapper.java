@@ -3,7 +3,9 @@ package com.gtasterix.AbhinavNGO.mapper;
 import com.gtasterix.AbhinavNGO.DTO.QualificationDTO;
 import com.gtasterix.AbhinavNGO.model.Application;
 import com.gtasterix.AbhinavNGO.model.Qualification;
+import org.springframework.stereotype.Component;
 
+@Component
 public class QualificationMapper {
 
     public static QualificationDTO toQualificationDTO(Qualification qualification) {

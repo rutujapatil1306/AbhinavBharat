@@ -22,8 +22,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class ApplicationService {
@@ -39,6 +41,9 @@ public class ApplicationService {
 
     @Autowired
     private AddressMapper addressMapper;
+
+    @Autowired
+    private QualificationMapper qualificationMapper;
 
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     private static final String MOBILE_REGEX = "^[6-9][0-9]{9}$";
@@ -204,7 +209,7 @@ public class ApplicationService {
         // Validate the incoming DTO
         validateApplicationDTO(updatedApplicationDTO);
 
-        // Update application fields (same as before)
+        // Update basic application fields
         existingApplication.setApplyFor(updatedApplicationDTO.getApplyFor());
         existingApplication.setFirstName(updatedApplicationDTO.getFirstName());
         existingApplication.setMiddleName(updatedApplicationDTO.getMiddleName());
@@ -225,62 +230,60 @@ public class ApplicationService {
         existingApplication.setExperienceMonths(updatedApplicationDTO.getExperienceMonths());
         existingApplication.setExperienceDays(updatedApplicationDTO.getExperienceDays());
 
-        // Update existing qualifications without creating new rows
-        List<Qualification> existingQualifications = existingApplication.getQualifications();
-        List<QualificationDTO> updatedQualifications = updatedApplicationDTO.getQualifications();
+        // Update qualifications
+        List<Qualification> existingQualifications = existingApplication.getQualifications(); // Existing qualifications in DB
+        List<QualificationDTO> updatedQualificationsDTO = updatedApplicationDTO.getQualifications();
 
-        for (QualificationDTO updatedQualification : updatedQualifications) {
-            for (Qualification existingQualification : existingQualifications) {
-                if (existingQualification.getQualificationId() != null &&
-                        existingQualification.getQualificationId().equals(updatedQualification.getQualificationId())) {
-                    // Update fields if they are present in the JSON
-                    if (updatedQualification.getStandard() != null) {
-                        existingQualification.setStandard(updatedQualification.getStandard());
-                    }
-                    if (updatedQualification.getUniversity() != null) {
-                        existingQualification.setUniversity(updatedQualification.getUniversity());
-                    }
-                    if (updatedQualification.getPassingYear() != null) {
-                        existingQualification.setPassingYear(updatedQualification.getPassingYear());
-                    }
-                    if (updatedQualification.getPercentage() != null) {
-                        existingQualification.setPercentage(updatedQualification.getPercentage());
-                    }
-                }
+        // Clear the existing qualifications to handle orphan removal correctly
+        existingQualifications.clear();
+
+        // Rebuild the list of qualifications with the updated data
+        for (QualificationDTO updatedQualificationDTO : updatedQualificationsDTO) {
+            Qualification updatedQualification;
+
+            // Check if the qualification exists and update, otherwise create a new one
+            if (updatedQualificationDTO.getQualificationId() != null) {
+                updatedQualification = qualificationMapper.toQualification(updatedQualificationDTO);
+            } else {
+                updatedQualification = new Qualification();
             }
+
+            // Set fields for the qualification
+            updatedQualification.setStandard(updatedQualificationDTO.getStandard());
+            updatedQualification.setUniversity(updatedQualificationDTO.getUniversity());
+            updatedQualification.setPassingYear(updatedQualificationDTO.getPassingYear());
+            updatedQualification.setPercentage(updatedQualificationDTO.getPercentage());
+
+            // Set the association with the application
+            updatedQualification.setApplication(existingApplication);
+
+            // Add to the existing application's qualification list
+            existingQualifications.add(updatedQualification);
         }
 
-        // Update existing addresses without creating new rows
-        List<Address> existingAddresses = existingApplication.getAddresses();
-        List<AddressDTO> updatedAddresses = updatedApplicationDTO.getAddresses();
+        // Update addresses
+        List<Address> existingAddresses = existingApplication.getAddresses(); // Existing addresses in DB
+        List<AddressDTO> updatedAddressesDTO = updatedApplicationDTO.getAddresses();
 
-        for (AddressDTO updatedAddress : updatedAddresses) {
-            for (Address existingAddress : existingAddresses) {
-                if (existingAddress.getAddressId() != null &&
-                        existingAddress.getAddressId().equals(updatedAddress.getAddressId())) {
-                    // Update fields if they are present in the JSON
-                    if (updatedAddress.getStreetAddress() != null) {
-                        existingAddress.setStreetAddress(updatedAddress.getStreetAddress());
-                    }
-                    if (updatedAddress.getTaluka() != null) {
-                        existingAddress.setTaluka(updatedAddress.getTaluka());
-                    }
-                    if (updatedAddress.getDistrict() != null) {
-                        existingAddress.setDistrict(updatedAddress.getDistrict());
-                    }
-                    if (updatedAddress.getState() != null) {
-                        existingAddress.setState(updatedAddress.getState());
-                    }
-                    if (updatedAddress.getPincode() != null) {
-                        existingAddress.setPincode(updatedAddress.getPincode());
-                    }
-                }
-            }
+        // Clear the existing addresses
+        existingAddresses.clear();
+
+        // Rebuild the addresses list with the updated data
+        for (AddressDTO updatedAddressDTO : updatedAddressesDTO) {
+            Address updatedAddress = addressMapper.toAddress(updatedAddressDTO);
+
+            // Set the association with the application
+            updatedAddress.setApplication(existingApplication);
+
+            // Add the updated address to the list
+            existingAddresses.add(updatedAddress);
         }
 
-        applicationRepository.save(existingApplication);
+        // Save the updated application
+        Application savedApplication = applicationRepository.save(existingApplication);
 
-        return ApplicationMapper.toApplicationDTO(existingApplication);
+        // Return the updated application as a DTO
+        return ApplicationMapper.toApplicationDTO(savedApplication);
     }
 
     public ApplicationDTO patchById(Integer applicationId, ApplicationDTO patchBody) {
