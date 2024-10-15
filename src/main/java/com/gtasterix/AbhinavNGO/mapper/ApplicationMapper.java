@@ -34,6 +34,7 @@ public class ApplicationMapper {
         application.setExperienceYear(applicationDTO.getExperienceYear());
         application.setExperienceMonths(applicationDTO.getExperienceMonths());
         application.setExperienceDays(applicationDTO.getExperienceDays());
+
         application.setQualifications(new ArrayList<>()); // Initialize the qualifications collection
         application.setAddresses(new ArrayList<>()); // Initialize the addresses collection
 
@@ -85,6 +86,7 @@ public class ApplicationMapper {
         applicationDTO.setExperienceYear(application.getExperienceYear());
         applicationDTO.setExperienceMonths(application.getExperienceMonths());
         applicationDTO.setExperienceDays(application.getExperienceDays());
+        applicationDTO.setSubmissionDate(application.getSubmissionDate()); ;
 
         // Map qualifications
         List<Qualification> qualifications = application.getQualifications();

@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class ApplicationDTO {
     private String experienceYear;
     private String experienceMonths;
     private String experienceDays;
+    private LocalDate submissionDate;
 
     private List<QualificationDTO> qualifications;
     private List<AddressDTO> addresses;

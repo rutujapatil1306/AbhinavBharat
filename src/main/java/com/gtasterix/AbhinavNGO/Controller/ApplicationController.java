@@ -46,6 +46,12 @@ public class ApplicationController {
         }
     }
 
+    @GetMapping("/submitted-today")
+    public ResponseEntity<List<Application>> getApplicationsSubmittedToday() {
+        List<Application> applications = applicationService.getAllApplicationsSubmittedToday();
+        return ResponseEntity.ok(applications);
+    }
+
     @GetMapping("/getById")
     public ResponseEntity<Response> getByIdApplication(@RequestParam Integer id) {
         try {

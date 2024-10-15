@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,11 +54,11 @@ public class Application {
 
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
-    private List<Qualification> qualifications ;
+    private List<Qualification> qualifications;
 
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
-    private List<Address> addresses ;
+    private List<Address> addresses;
 
     private String organizationName;
     private String workingLocation;
@@ -67,27 +68,12 @@ public class Application {
     private String experienceMonths;
     private String experienceDays;
 
-//    // Method to add a Qualification
-//    public void addQualification(Qualification qualification) {
-//        qualifications.add(qualification);
-//        qualification.setApplication(this);
-//    }
-//
-//    // Method to remove a Qualification
-//    public void removeQualification(Qualification qualification) {
-//        qualifications.remove(qualification);
-//        qualification.setApplication(null);
-//    }
-//
-//    // Method to add an Address
-//    public void addAddress(Address address) {
-//        addresses.add(address);
-//        address.setApplication(this);
-//    }
-//
-//    // Method to remove an Address
-//    public void removeAddress(Address address) {
-//        addresses.remove(address);
-//        address.setApplication(null);
-//    }
+    @Column(nullable = false)
+    private LocalDate submissionDate;
+
+    @PrePersist
+    protected void onCreate(){
+        submissionDate = LocalDate.now();
+    }
+
 }

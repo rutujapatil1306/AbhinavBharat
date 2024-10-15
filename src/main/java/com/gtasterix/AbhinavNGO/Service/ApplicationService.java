@@ -90,7 +90,7 @@ public class ApplicationService {
         if (dob == null) {
             throw new IllegalArgumentException("Date of birth cannot be null.");
         }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d/M/yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-M-yyyy");
         try {
             LocalDate parsedDate = LocalDate.parse(dob, formatter);
         } catch (DateTimeParseException e) {
@@ -178,6 +178,10 @@ public class ApplicationService {
             applicationDTOList.add(ApplicationMapper.toApplicationDTO(application));
         }
         return applicationDTOList;
+    }
+
+    public List<Application> getAllApplicationsSubmittedToday() {
+        return applicationRepository.findBySubmissionDate(LocalDate.now());
     }
 
     public ApplicationDTO getByIDApplication(Integer id) throws Exception {
